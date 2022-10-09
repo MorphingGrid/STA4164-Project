@@ -1,0 +1,299 @@
+---
+title: "Project 2"
+author: "Vinh Van"
+date: "4/16/2022"
+output: word_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+rm(list=ls())
+```
+
+```{r}
+grades <- read.csv(
+  file = "C:\\Users\\Duyet\\Downloads\\School\\Spring 2022\\STA4164\\Project 2\\student-mat.csv"
+)
+```
+
+##Comment out when knitting
+```{r}
+##grades
+```
+
+Summary Statistics and Histogram of G3
+```{r}
+summary(grades[c('G3')])
+hist(grades[,'G3'],xlab='Final Grades',main='Histogram of G3')
+```
+
+Creating the scatter plots
+```{r}
+par(
+  mfrow=c(2,3)
+)
+
+plot(
+    x = grades$age,
+    y = grades$G3,
+    xlab = "Age",
+    ylab = "Final Grades",
+)
+abline(
+  reg = lsfit(
+    x = grades$age,
+    y = grades$G3
+  )
+)
+
+plot(
+    x = grades$failures,
+    y = grades$G3,
+    xlab = "# of Past Class Failures",
+    ylab = "Final Grades",
+)
+abline(
+  reg = lsfit(
+    x = grades$failures,
+    y = grades$G3
+  )
+)
+
+plot(
+    x = grades$absences,
+    y = grades$G3,
+    xlab = "Number of School Absences",
+    ylab = "Final Grades",
+)
+abline(
+  reg = lsfit(
+    x = grades$absences,
+    y = grades$G3
+  )
+)
+
+plot(
+    x = grades$G1,
+    y = grades$G3,
+    xlab = "First Semester Grades",
+    ylab = "Final Grades",
+)
+abline(
+  reg = lsfit(
+    x = grades$G1,
+    y = grades$G3
+  )
+)
+
+plot(
+    x = grades$G2,
+    y = grades$G3,
+    xlab = "Second Semester Grades",
+    ylab = "Final Grades",
+)
+abline(
+  reg = lsfit(
+    x = grades$G2,
+    y = grades$G3
+  )
+)
+```
+
+
+
+Creating a model of just the quantatative variables
+```{r}
+lm_initial <- lm(
+  formula = G3 ~ G1 + G2 + age + failures + absences,
+  data = grades,
+)
+
+lm_initialsquared <- lm(
+  formula = G3^2 ~ G1 + G2 + age + failures + absences,
+  data = grades,
+)
+
+summary(lm_initial)
+summary(lm_initialsquared)
+
+anova(lm_initial)
+anova(lm_initialsquared)
+
+```   
+
+Correlation matrix
+```{r}
+mcor <- cor(grades[c('G3','G1','G2','age','failures','absences')])
+mcor
+```
+
+Variance Inflation Factor
+```{r}
+library(car)
+vif <- vif(lm_initial)
+vif
+```
+
+Diagnostic Plots
+```{r}
+v_color <- viridis::viridis(
+  n = nrow(
+    x = grades
+  )
+)
+grades$color <- v_color[Matrix::invPerm(
+  p = order(
+    x = grades$G3
+  )
+)]
+```
+
+```{r}
+par(mfrow=c(2,2))
+plot(
+  x = lm_initial,
+  pch = 19,
+  col = grades$color
+)
+
+par(mfrow = c(2,2))
+plot(
+  x = lm_initialsquared,
+  pch = 19,
+  col = grades$color
+)
+```
+
+
+
+Installing the fast dummies package to handle the ludacrous amount of dummy variables in the dataset
+
+```{r}
+library('fastDummies')
+```
+
+Creating the dummy variables
+```{r}
+gradedummy <- dummy_cols(grades, select_columns = c(
+  'school', 'sex','address','famsize','Medu','Fedu','Mjob','Fjob','traveltime','studytime','schoolsup','famsup','activities','nursery','higher','internet','romantic','famrel','freetime','goout','Dalc','Walc','health'))
+```
+
+Building the linear Model with dummy variables
+```{r}
+lm_full <- lm(
+  formula = G3^2 ~ G1 + G2 + age + failures + absences + school_GP + school_MS + sex_F + sex_M + address_R + address_U
+  + famsize_GT3 + famsize_LE3 + Medu_0 + Medu_0 + Medu_1 + Medu_2 +Medu_3 + Medu_4 +Fedu_0 + Fedu_1 + Fedu_2 + Fedu_3 + Fedu_4 + Mjob_at_home + Mjob_health + Mjob_other + Mjob_services + Mjob_teacher + Fjob_at_home + Fjob_health + Fjob_other + Fjob_services + Fjob_teacher + traveltime_1 + traveltime_2 + traveltime_3 + traveltime_4 + studytime_1 + studytime_2 + studytime_3 + studytime_4 + schoolsup_no + schoolsup_yes + famsup_no + famsup_yes + activities_no + activities_yes + nursery_no + nursery_yes + higher_no + higher_yes + internet_no + internet_yes + romantic_no + romantic_yes + famrel_1 + famrel_2 + famrel_3 + famrel_4 + famrel_5 + freetime_1 + freetime_2 + freetime_3 + freetime_4 + freetime_5 + goout_1 + goout_2 + goout_3 + goout_4 + goout_5 + Dalc_1 + Dalc_2 + Dalc_3 + Dalc_4 + Dalc_5 + Walc_1 + Walc_2 + Walc_3 + Walc_4 + Walc_5 + health_1 + health_2 + health_3 + health_4 + health_5,
+  data = gradedummy
+)
+
+summary(lm_full)
+```
+
+Diagnostic Plots
+```{r}
+v_color1 <- viridis::viridis(
+  n = nrow(
+    x = gradedummy
+  )
+)
+gradedummy$color <- v_color[Matrix::invPerm(
+  p = order(
+    x = gradedummy$G3
+  )
+)]
+```
+
+```{r}
+par(mfrow = c(2,2))
+plot(
+  x = lm_initialsquared,
+  pch = 19,
+  col = grades$color
+)
+
+par(mfrow=c(2,2))
+plot(
+  x = lm_full,
+  pch = 19,
+  col = gradedummy$color
+)
+```
+
+Stepwise Regression
+
+```{r}
+library(olsrr)
+```
+
+Stepwise with p values
+```{r}
+stepwise.p <- ols_step_both_p(lm_full,prem = 0.05, details = FALSE)
+stepwise.p
+```
+
+Stepwise with AIC values #Comment out when Knitting
+```{r}
+##stepwise.aic <- ols_step_both_aic(lm_full, details = FALSE)
+##stepwise.aic
+```
+
+Reduced model post Stepwise p-value
+```{r}
+lm_reduced <- lm(
+  formula = G3^2 ~ G2 + G1 + famrel_5 + age + studytime_1 + Fjob_services + Walc_1 + Medu_2,
+  data = gradedummy
+)
+
+summary(lm_reduced)
+```
+
+```{r}
+lm_reduced_FINAL <- lm(
+  formula = G3^2 ~ G2 + G1 + famrel_1 + famrel_2 + famrel_3 + famrel_4 + famrel_5 + age + studytime_1 + studytime_2 + studytime_3 + studytime_4  + Fjob_services + Fjob_at_home + Fjob_health + Fjob_other + Fjob_teacher  + Walc_1 +  Walc_2 + Walc_3 + Walc_4 + Walc_5 + Medu_1 + Medu_2 + Medu_3 + Medu_4,
+  data = gradedummy
+)
+
+summary(lm_reduced_FINAL)
+```
+
+Diagnostic Plots for Final Model
+```{r}
+par(mfrow=c(2,2))
+plot(
+  x = lm_reduced_FINAL,
+  pch = 19,
+  col = gradedummy$color
+)
+```
+
+Comparing the models
+```{r}
+anova(lm_reduced,lm_reduced_FINAL)
+
+anova(lm_initialsquared,lm_reduced_FINAL)
+```
+
+Predicted vs Observed
+```{r}
+pred <- predict(lm_reduced_FINAL)
+
+dt_prediction = (data.frame((sqrt(pred)),(gradedummy$G3)))
+head(dt_prediction,30)
+
+plot(x=sqrt(pred),y=gradedummy$G3,xlab='Predicted Values',ylab='Actual Values',main='Predicted vs Observed')
+abline(
+  reg = lsfit(
+    x = sqrt(pred),
+    y = gradedummy$G3
+  )
+)
+```
+
+
+
+
+
+
